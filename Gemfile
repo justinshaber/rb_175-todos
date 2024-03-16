@@ -6,3 +6,7 @@ gem "erubis"
 gem "webrick"
 
 ruby "3.2.2"
+
+group :production do
+  gem "puma"
+end

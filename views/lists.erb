@@ -1,12 +1,12 @@
 <ul id="lists">
-  <% @lists.each_with_index do |list, idx| %>
-    <li class="<%= list_completed? list %>">
-      <a href="/lists/<%= idx %>">
-        <h2><%= list[:name] %></h2>
-        <p><%= count_incomplete_todos list %> / <%= count_total_todos list %></p>
-      </a>
-    </li>
-  <% end %>
+<% sort_lists(@lists) do |list, idx| %>
+  <li class="<%= list_completed? list %>">
+    <a href="/lists/<%= idx %>">
+      <h2><%= list[:name] %></h2>
+      <p><%= count_incomplete_todos list %> / <%= count_total_todos list %></p>
+    </a>
+  </li>
+<% end %>
 </ul>
 
 <% content_for :header_links do %>

@@ -2,7 +2,7 @@
   <header>
     <h2><%= @current_list[:name] %></h2>
     <ul>
-      <% unless all_completed? @current_list %>
+      <% unless list_completed? @current_list %>
         <li>
           <form action="/lists/<%= @list_index %>/complete_all" method="post">
             <button class="check" type="submit">Complete All</button>
@@ -14,7 +14,7 @@
   </header>
 
   <ul>
-    <% @current_list[:todos].each_with_index do |todo, index| %>
+    <% sort_todos(@current_list[:todos]) do |todo, index| %>
       <li class="<%= completed?(todo) %>">
           <form action="/lists/<%= @list_index %>/todos/<%= index %>" method="post" class="check">
             <input type="hidden" name="completed" value="<%= !todo[:completed] %>" />

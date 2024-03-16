@@ -1,5 +1,5 @@
 require 'sinatra'
-require 'sinatra/reloader'
+require 'sinatra/reloader' if development?
 require 'sinatra/content_for'
 require 'tilt/erubis'
 
@@ -26,6 +26,20 @@ helpers do
 
   def count_total_todos(list)
     list[:todos].size
+  end
+
+  def sort_lists(list, &block)
+    indexed_list = list.map.with_index { |list, index| [list, index] }
+    sorted_list = indexed_list.sort_by { |list, _| list_completed?(list) ? 1 : 0 }
+
+    sorted_list.each(&block)
+  end
+
+  def sort_todos(todos, &block)
+    indexed_todos = todos.map.with_index { |todo, index| [todo, index] }
+    sorted_todos = indexed_todos.sort_by { |todo, _| todo[:completed] ? 1 : 0 }
+
+    sorted_todos.each(&block)
   end
 end
 
@@ -93,9 +107,6 @@ end
 get "/lists/:index" do
   @list_index = params[:index].to_i
   @current_list = session[:lists][@list_index]
-  # @current_list[:todos] = @current_list[:todos].partition do |todo|
-  #   !todo[:completed]
-  # end.flatten
 
   erb :single_list, layout: :layout
 end
