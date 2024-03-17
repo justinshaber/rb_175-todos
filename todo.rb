@@ -6,6 +6,7 @@ require 'tilt/erubis'
 configure do
   enable :sessions
   set :session_secret, SecureRandom.hex(32)
+  set :erb, :escape_html => true
 end
 
 helpers do
@@ -90,7 +91,7 @@ end
 post "/lists/:index" do
   list_name = params[:list_name].strip
   @list_index = params[:index].to_i
-  @current_list = session[:lists][@list_index]
+  @current_list = load_list(@list_index)
 
   error = error_for_list_name(list_name)
   if error
@@ -103,19 +104,27 @@ post "/lists/:index" do
   end
 end
 
+# Validate the list at index _ exists
+def load_list(index)
+  list = session[:lists][index] if index && session[:lists][index]
+  return list if list
+
+  session[:error] = "The specified list was not found."
+  redirect "/lists"
+end
+
 # View a todo list
 get "/lists/:index" do
   @list_index = params[:index].to_i
-  @current_list = session[:lists][@list_index]
-
+  
+  @current_list = load_list(@list_index)
   erb :single_list, layout: :layout
 end
 
 # View single list name editing page
 get "/lists/:index/edit" do
   @list_index = params[:index].to_i
-  @current_list = session[:lists][@list_index]
-
+  @current_list = load_list(@list_index)
 
   erb :edit_list, layout: :layout
 end
@@ -139,7 +148,7 @@ end
 post "/lists/:index/todos" do
   todo = params[:todo].strip
   @list_index = params[:index].to_i
-  @current_list = session[:lists][@list_index]
+  @current_list = load_list(@list_index)
 
   error = error_for_todo_name(todo)
   if error
@@ -156,7 +165,7 @@ end
 post "/lists/:list_index/todos/:todo_index/delete" do
   @list_index = params[:list_index].to_i
   @todo_index = params[:todo_index].to_i
-  @current_list = session[:lists][@list_index]
+  @current_list = load_list(@list_index)
   deleted_todo = @current_list[:todos].delete_at @todo_index
   session[:success] = "The todo '#{deleted_todo[:name]}' has been deleted."
 
@@ -165,7 +174,7 @@ end
 
 # Mark a todo list item as complete
 def mark_done_at(list_index, todo_index)
-  current_list = session[:lists][list_index]
+  @current_list = load_list(@list_index)
   current_todo = current_list[:todos][todo_index]
   current_todo[:completed] = true
 
@@ -187,7 +196,7 @@ end
 post "/lists/:list_index/todos/:todo_index" do
   @list_index = params[:list_index].to_i
   @todo_index = params[:todo_index].to_i
-  @current_list = session[:lists][@list_index]
+  @current_list = load_list(@list_index)
   @current_todo = @current_list[:todos][@todo_index]
   change_status_to = params[:completed] == "true"
 
@@ -199,7 +208,7 @@ end
 # Mark all todos as complete
 post "/lists/:list_index/complete_all" do
   @list_index = params[:list_index].to_i
-  @current_list = session[:lists][@list_index]
+  @current_list = load_list(@list_index)
   @current_list[:todos].each { |todo| todo[:completed] = true }
 
   session[:success] = "All todos have been completed."
