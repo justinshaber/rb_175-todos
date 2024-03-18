@@ -133,9 +133,12 @@ end
 post "/lists/:index/delete" do
   list_index = params[:index].to_i
   deleted_list = session[:lists].delete_at list_index
-  session[:success] = "The list '#{deleted_list[:name]}' has been deleted."
-
-  redirect "/lists"
+  if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
+    "/lists"
+  else
+    session[:success] = "The list '#{deleted_list[:name]}' has been deleted."
+    redirect "/lists"
+  end
 end
 
 def error_for_todo_name(name)
@@ -167,9 +170,12 @@ post "/lists/:list_index/todos/:todo_index/delete" do
   @todo_index = params[:todo_index].to_i
   @current_list = load_list(@list_index)
   deleted_todo = @current_list[:todos].delete_at @todo_index
-  session[:success] = "The todo '#{deleted_todo[:name]}' has been deleted."
-
-  redirect "/lists/#{@list_index}"
+  if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
+    status 204
+  else
+    session[:success] = "The todo '#{deleted_todo[:name]}' has been deleted."
+    redirect "/lists/#{@list_index}"
+  end
 end
 
 # Mark a todo list item as complete

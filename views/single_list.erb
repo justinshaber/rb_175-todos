@@ -4,7 +4,7 @@
     <ul>
       <% unless list_completed? @current_list %>
         <li>
-          <form action="/lists/<%= @list_index %>/complete_all" method="post">
+          <form class="delete" action="/lists/<%= @list_index %>/complete_all" method="post">
             <button class="check" type="submit">Complete All</button>
           </form>
         </li>
