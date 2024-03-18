@@ -44,6 +44,50 @@ helpers do
   end
 end
 
+# Return an error message if name is invalid. Return nil if name is valid.
+def error_for_list_name(name)
+  if !(1..100).cover? name.size
+    'List must be between 1 and 100 characters.'
+  elsif session[:lists].any? { |list| list[:name] == name }
+    'List name must be unique.'
+  end
+end
+
+# Validate the list at index _ exists
+def load_list(index)
+  list = session[:lists][index] if index && session[:lists][index]
+  return list if list
+
+  session[:error] = "The specified list was not found."
+  redirect "/lists"
+end
+
+def error_for_todo_name(name)
+  if !(1..100).cover? name.size
+    'Todo must be between 1 and 100 characters.'
+  end
+end
+
+# Mark a todo list item as complete
+def mark_done_at(list_index, todo_index)
+  @current_list = load_list(@list_index)
+  current_todo = current_list[:todos][todo_index]
+  current_todo[:completed] = true
+
+  current_todo
+end
+
+
+def toggle(todo, status)
+  if status
+    todo[:completed] = true
+    session[:success] = "The todo '#{todo[:name]}' has been checked off."
+  else
+    todo[:completed] = false
+    session[:success] = "The todo '#{todo[:name]}' has been unchecked."
+  end
+end
+
 before do
   session[:lists] ||= []
 end
@@ -61,15 +105,6 @@ end
 # Render the new list form
 get "/lists/new" do
   erb :new_list, layout: :layout
-end
-
-# Return an error message if name is invalid. Return nil if name is valid.
-def error_for_list_name(name)
-  if !(1..100).cover? name.size
-    'List must be between 1 and 100 characters.'
-  elsif session[:lists].any? { |list| list[:name] == name }
-    'List name must be unique.'
-  end
 end
 
 # Create a new list
@@ -104,15 +139,6 @@ post "/lists/:index" do
   end
 end
 
-# Validate the list at index _ exists
-def load_list(index)
-  list = session[:lists][index] if index && session[:lists][index]
-  return list if list
-
-  session[:error] = "The specified list was not found."
-  redirect "/lists"
-end
-
 # View a todo list
 get "/lists/:index" do
   @list_index = params[:index].to_i
@@ -141,13 +167,12 @@ post "/lists/:index/delete" do
   end
 end
 
-def error_for_todo_name(name)
-  if !(1..100).cover? name.size
-    'Todo must be between 1 and 100 characters.'
-  end
+def next_todo_id(todos)
+  max = todos.map { |todo| todo[:id] }.max || 0
+  max + 1
 end
 
-# Add a todo list to a page
+# Add a todo item to a list
 post "/lists/:index/todos" do
   todo = params[:todo].strip
   @list_index = params[:index].to_i
@@ -158,7 +183,8 @@ post "/lists/:index/todos" do
     session[:error] = error
     erb :single_list, layout: :layout
   else
-    @current_list[:todos] << { name: todo, completed: false }
+    id = next_todo_id(@current_list[:todos])
+    @current_list[:todos] << { id: id, name: todo, completed: false }
     session[:success] = "The todo '#{todo}' was added."
     redirect "/lists/#{@list_index}"
   end
@@ -175,26 +201,6 @@ post "/lists/:list_index/todos/:todo_index/delete" do
   else
     session[:success] = "The todo '#{deleted_todo[:name]}' has been deleted."
     redirect "/lists/#{@list_index}"
-  end
-end
-
-# Mark a todo list item as complete
-def mark_done_at(list_index, todo_index)
-  @current_list = load_list(@list_index)
-  current_todo = current_list[:todos][todo_index]
-  current_todo[:completed] = true
-
-  current_todo
-end
-
-
-def toggle(todo, status)
-  if status
-    todo[:completed] = true
-    session[:success] = "The todo '#{todo[:name]}' has been checked off."
-  else
-    todo[:completed] = false
-    session[:success] = "The todo '#{todo[:name]}' has been unchecked."
   end
 end
 
