@@ -66,16 +66,6 @@ def error_for_todo_name(name)
   end
 end
 
-# Mark a todo list item as complete
-# def mark_done_at(list_id, todo_index)
-#   @current_list = load_list(@list_id)
-#   current_todo = current_list[:todos][todo_index]
-#   current_todo[:completed] = true
-
-#   current_todo
-# end
-
-
 def toggle(todo, status)
   if status
     todo[:completed] = true
@@ -162,13 +152,12 @@ end
 # Delete an entire todo list
 post "/lists/:list_id/delete" do
   list_id = params[:list_id].to_i
-  deleted_list = session[:lists].select { |list| list[:id] == @list_id }.first
-  session[:lists].reject! { |list| list[:id] == @list_id }
-
+  deleted_list = session[:lists].select { |list| list[:id] == list_id }.first
+  session[:lists].reject! { |list| list[:id] == list_id }
+  session[:success] = "The list '#{deleted_list[:name]}' has been deleted."
   if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
     "/lists"
   else
-    session[:success] = "The list '#{deleted_list[:name]}' has been deleted."
     redirect "/lists"
   end
 end
