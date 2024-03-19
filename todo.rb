@@ -31,15 +31,13 @@ helpers do
 
   def sort_lists(list, &block)
     indexed_list = list.map.with_index { |list, index| [list, index] }
-    sorted_list = indexed_list.sort_by { |list, _| list_completed?(list) ? 1 : 0 }
+    sorted_list = indexed_list.sort_by { |list, _ | list_completed?(list) ? 1 : 0 }
 
     sorted_list.each(&block)
   end
 
   def sort_todos(todos, &block)
-    indexed_todos = todos.map.with_index { |todo, index| [todo, index] }
-    sorted_todos = indexed_todos.sort_by { |todo, _| todo[:completed] ? 1 : 0 }
-
+    sorted_todos = todos.sort_by { |todo, _| todo[:completed] ? 1 : 0 }
     sorted_todos.each(&block)
   end
 end
@@ -191,25 +189,27 @@ post "/lists/:index/todos" do
 end
 
 # Delete a todo list item
-post "/lists/:list_index/todos/:todo_index/delete" do
+post "/lists/:list_index/todos/:todo_id/delete" do
   @list_index = params[:list_index].to_i
-  @todo_index = params[:todo_index].to_i
+  @todo_id = params[:todo_id].to_i
   @current_list = load_list(@list_index)
-  deleted_todo = @current_list[:todos].delete_at @todo_index
+
+  @current_list[:todos].reject! { |todo| todo[:id] == @todo_id }
+
   if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
     status 204
   else
-    session[:success] = "The todo '#{deleted_todo[:name]}' has been deleted."
+    session[:success] = "The todo has been deleted."
     redirect "/lists/#{@list_index}"
   end
 end
 
 # Toggle a todo list item as complete or incomplete
-post "/lists/:list_index/todos/:todo_index" do
+post "/lists/:list_index/todos/:todo_id" do
   @list_index = params[:list_index].to_i
-  @todo_index = params[:todo_index].to_i
+  @todo_id = params[:todo_id].to_i
   @current_list = load_list(@list_index)
-  @current_todo = @current_list[:todos][@todo_index]
+  @current_todo = @current_list[:todos].select { |todo| todo[:id] == @todo_id }.first
   change_status_to = params[:completed] == "true"
 
   toggle @current_todo, change_status_to
